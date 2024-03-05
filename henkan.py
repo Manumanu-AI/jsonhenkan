@@ -1,23 +1,12 @@
 import streamlit as st
-import re
 import json
+import re
 
-# Streamlitアプリのレイアウト設定
-st.title('テキストからメタデータへの変換器')
-
-# 2カラムのレイアウトを作成
-col1, col2 = st.columns(2)
-
-# col1にテキスト入力エリアを配置
-with col1:
-    st.write("以下にテキストを入力してください：")
-    input_text = st.text_area("", height=300)
-
-# 変換ボタン
-if st.button('変換'):
-    # 改行文字を\nに置換（文字列としての\nを保持するために、ここでは置換しない）
-    text = input_text
-
+# メタデータを生成する関数
+def generate_metadata(text):
+    # テキストの前処理: このステップでは特に改行の扱いを変更する必要はなし
+    processed_text = text
+    
     # メタデータ辞書の初期化
     metadata = {
         "plot_id": "",
@@ -27,7 +16,7 @@ if st.button('変換'):
         "3枚目(見出し)": "",
         "3枚目(本文)": "",
         "4枚目(見出し)": "",
-        "4枚目(本文)": "()",
+        "4枚目(本文)": "",
         "5枚目(見出し)": "",
         "5枚目(本文)": "",
         "6枚目(見出し)": "",
@@ -39,29 +28,39 @@ if st.button('変換'):
         "9枚目(見出し)": "",
         "9枚目(本文)": "",
     }
-
-    # テキストをセクションに分割
-    sections = re.split(r'(\d+枚目[\s\S]*?)(?=\d+枚目|\Z)', text)
-
-    # 各セクションを処理
+    
+    # プロットIDの抽出
+    plot_id_match = re.search(r'0枚目\(plotid\)\n(.*?)\n', processed_text)
+    if plot_id_match:
+        metadata["plot_id"] = plot_id_match.group(1)
+    
+    # 各セクションの情報を抽出してメタデータに追加
+    sections = re.split(r'(\d+枚目[\s\S]*?)(?=\d+枚目|\Z)', processed_text)
     for section in sections:
         if section:
-            # 枚数と内容を分離
             header, *content = section.split('\n', 1)
             content = content[0] if content else ""
-            
-            # メタデータキーを生成
-            key = header.replace(' ', '').replace('-', ' ').strip()
-            
-            # メタデータ辞書に内容を追加（ここで、改行を文字列としての\nに置換）
-            if '見出し' in key or '表紙' in key:
-                metadata[key] = content.replace('\n', '\\n')
+            key = re.sub(r'(\d+)枚目', r'\1枚目-', header).strip().replace(' ', '-')
+            if '見出し' in key or '表紙' in key or 'CTA画像' in key:
+                metadata[key] = content
             else:
-                metadata[key] = content.replace('\n', '\\n')
+                metadata[key] = content
+    
+    return json.dumps(metadata, ensure_ascii=False, indent=2).replace('\\n', '\n')
 
-    # 変換されたメタデータをcol2に表示
+# Streamlit UI
+st.title('テキストからメタデータ(JSON)への変換')
+
+# テキスト入力エリア
+with st.container():
+    col1, col2 = st.columns(2)
+    with col1:
+        input_text = st.text_area("テキストをここに貼り付けてください", height=300)
     with col2:
-        st.write("変換されたメタデータ：")
-        # JSON文字列を生成する際に改行を保持
-        metadata_json = json.dumps(metadata, ensure_ascii=False, indent=2)
-        st.text_area("", value=metadata_json, height=300)
+        output_text = st.empty()
+
+# 変換ボタン
+if st.button('変換'):
+    # メタデータの生成と表示
+    metadata_json = generate_metadata(input_text)
+    output_text.text_area("変換されたメタデータ", metadata_json, height=300, key="output")
