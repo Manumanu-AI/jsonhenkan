@@ -55,11 +55,15 @@ if st.button('変換'):
             
             # メタデータ辞書に内容を追加
             if '見出し' in key or '表紙' in key:
-                metadata[key] = content.replace('\\n', '')
+                metadata[key] = content.replace('\\n', '\\\\n')
             else:
-                metadata[key] = content
+                metadata[key] = content.replace('\\n', '\\\\n')
+
+    # メタデータをJSON形式の文字列に変換
+    metadata_json = json.dumps(metadata, ensure_ascii=False, indent=2)
 
     # 変換されたメタデータをcol2に表示
     with col2:
         st.write("変換されたメタデータ：")
-        st.text_area("", value=json.dumps(metadata, ensure_ascii=False, indent=2), height=300)
+        # JSON文字列内の\\nを\nに置換して表示
+        st.text_area("", value=metadata_json.replace('\\\\n', '\\n'), height=300)
