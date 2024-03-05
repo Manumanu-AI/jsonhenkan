@@ -17,7 +17,8 @@ def convert_to_json(input_text):
     lines = input_text.split('\n')
     metadata = {
         "plot_id": "",
-        "1枚目-表紙 (タイトル)": {"フック": "", "ベース": ""},
+        "1枚目-表紙-タイトル(フック)": "",
+        "1枚目-表紙-タイトル(ベース)": "",
         "2枚目(見出し)": "",
         "2枚目(本文)": "",
         "3枚目(見出し)": "",
@@ -44,11 +45,10 @@ def convert_to_json(input_text):
             if '枚目' in key:
                 section, label = key.split('枚目')
                 section = section + '枚目'
-                if '表紙-タイトル' in label:
-                    if 'フック' in label:
-                        metadata[section + " (タイトル)"]["フック"] = value
-                    else:
-                        metadata[section + " (タイトル)"]["ベース"] = value
+                if '表紙-タイトル(フック)' in label:
+                    metadata["1枚目-表紙-タイトル(フック)"] = value
+                elif '表紙-タイトル(ベース)' in label:
+                    metadata["1枚目-表紙-タイトル(ベース)"] = value
                 else:
                     metadata[section + label] = value.replace('\n', '\\n')
             elif '枚目(plotid' in key:
