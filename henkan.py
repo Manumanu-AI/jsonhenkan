@@ -3,27 +3,30 @@ import json
 
 # テキストを解析してメタデータに変換する関数
 def convert_text_to_metadata(text):
-    # テキストを行に分割
+    # 各行に分割
     lines = text.split('\n')
     
     # メタデータ辞書の初期化
     metadata = {}
-    
-    # 現在のキーを追跡
     current_key = None
+    current_value = ""
     
     for line in lines:
-        if line.endswith(')') or line.endswith('画像') or "枚目" in line:
-            # 新しいセクションの開始を検出
+        # セクションのヘッダーを検出
+        if "枚目" in line or "CTA画像" in line:
+            # 前のセクションの内容を保存
+            if current_key:
+                metadata[current_key] = current_value.rstrip("\\n")
+            # 新しいセクションのキーとして設定
             current_key = line.strip()
-            metadata[current_key] = ""  # 初期値として空文字列を設定
-        elif current_key:
-            # 現在のセクションにテキストを追加
-            metadata[current_key] += line + "\\n"
+            current_value = ""
+        else:
+            # 現在のセクションの内容に追加
+            current_value += line.replace('\n', '\\n') + "\\n"
     
-    # 不要な改行の削除
-    for key in metadata:
-        metadata[key] = metadata[key].strip("\\n")
+    # 最後のセクションを辞書に追加
+    if current_key and current_value:
+        metadata[current_key] = current_value.rstrip("\\n")
     
     return json.dumps(metadata, ensure_ascii=False, indent=2)
 
