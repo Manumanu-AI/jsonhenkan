@@ -1,31 +1,29 @@
 import streamlit as st
-import re
 import json
 
 # テキストを解析してメタデータに変換する関数
 def convert_text_to_metadata(text):
-    # 改行文字を\nに置換
-    text = text.replace('\n', '\\n')
+    # テキストを行に分割
+    lines = text.split('\n')
     
     # メタデータ辞書の初期化
     metadata = {}
     
-    # テキストをセクションに分割
-    sections = re.split(r'(\d+枚目[\s\S]*?)(?=\d+枚目|\Z)', text)
-    for section in sections:
-        if section:
-            # 枚数と内容を分離
-            header, *content = section.split('\n', 1)
-            content = content[0] if content else ""
-            
-            # メタデータキーを生成
-            key = header.replace(' ', '').replace('-', ' ')
-            
-            # メタデータ辞書に内容を追加
-            if '見出し' in key or '表紙' in key:
-                metadata[key] = content.replace('\\n', '')
-            else:
-                metadata[key] = content
+    # 現在のキーを追跡
+    current_key = None
+    
+    for line in lines:
+        if line.endswith(')') or line.endswith('画像') or "枚目" in line:
+            # 新しいセクションの開始を検出
+            current_key = line.strip()
+            metadata[current_key] = ""  # 初期値として空文字列を設定
+        elif current_key:
+            # 現在のセクションにテキストを追加
+            metadata[current_key] += line + "\\n"
+    
+    # 不要な改行の削除
+    for key in metadata:
+        metadata[key] = metadata[key].strip("\\n")
     
     return json.dumps(metadata, ensure_ascii=False, indent=2)
 
