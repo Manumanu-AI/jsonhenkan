@@ -15,8 +15,8 @@ with col1:
 
 # 変換ボタン
 if st.button('変換'):
-    # 改行文字を\nに置換
-    text = input_text.replace('\n', '\\n')
+    # 改行文字を\nに置換（文字列としての\nを保持するために、ここでは置換しない）
+    text = input_text
 
     # メタデータ辞書の初期化
     metadata = {
@@ -47,23 +47,21 @@ if st.button('変換'):
     for section in sections:
         if section:
             # 枚数と内容を分離
-            header, *content = section.split('\\n', 1)
+            header, *content = section.split('\n', 1)
             content = content[0] if content else ""
             
             # メタデータキーを生成
-            key = header.replace(' ', '').replace('-', ' ')
+            key = header.replace(' ', '').replace('-', ' ').strip()
             
-            # メタデータ辞書に内容を追加
+            # メタデータ辞書に内容を追加（ここで、改行を文字列としての\nに置換）
             if '見出し' in key or '表紙' in key:
-                metadata[key] = content.replace('\\n', '\\\\n')
+                metadata[key] = content.replace('\n', '\\n')
             else:
-                metadata[key] = content.replace('\\n', '\\\\n')
-
-    # メタデータをJSON形式の文字列に変換
-    metadata_json = json.dumps(metadata, ensure_ascii=False, indent=2)
+                metadata[key] = content.replace('\n', '\\n')
 
     # 変換されたメタデータをcol2に表示
     with col2:
         st.write("変換されたメタデータ：")
-        # JSON文字列内の\\nを\nに置換して表示
-        st.text_area("", value=metadata_json.replace('\\\\n', '\\n'), height=300)
+        # JSON文字列を生成する際に改行を保持
+        metadata_json = json.dumps(metadata, ensure_ascii=False, indent=2)
+        st.text_area("", value=metadata_json, height=300)
