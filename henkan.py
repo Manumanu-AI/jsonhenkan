@@ -4,8 +4,8 @@ import re
 
 # メタデータを生成する関数
 def generate_metadata(text):
-    # テキストの前処理: このステップでは特に改行の扱いを変更する必要はなし
-    processed_text = text
+    # テキストの前処理
+    processed_text = text.replace('\n', '\\n')
     
     # メタデータ辞書の初期化
     metadata = {
@@ -42,11 +42,11 @@ def generate_metadata(text):
             content = content[0] if content else ""
             key = re.sub(r'(\d+)枚目', r'\1枚目-', header).strip().replace(' ', '-')
             if '見出し' in key or '表紙' in key or 'CTA画像' in key:
-                metadata[key] = content
+                metadata[key] = content.replace('\\n', '')
             else:
                 metadata[key] = content
     
-    return json.dumps(metadata, ensure_ascii=False, indent=2).replace('\\n', '\n')
+    return json.dumps(metadata, ensure_ascii=False, indent=2)
 
 # Streamlit UI
 st.title('テキストからメタデータ(JSON)への変換')
@@ -63,4 +63,4 @@ with st.container():
 if st.button('変換'):
     # メタデータの生成と表示
     metadata_json = generate_metadata(input_text)
-    output_text.text_area("変換されたメタデータ", metadata_json, height=300, key="output")
+    output_text.text_area("変換されたメタデータ", metadata_json, height=300)
