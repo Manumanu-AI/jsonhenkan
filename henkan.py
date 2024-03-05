@@ -1,44 +1,35 @@
 import streamlit as st
 import json
 
-# テキストを解析してメタデータに変換する関数
-def convert_text_to_metadata(text):
-    # 各行に分割
-    lines = text.split('\n')
-    
-    # メタデータ辞書の初期化
-    metadata = {}
-    current_key = None
-    current_value = ""
-    
-    for line in lines:
-        # セクションのヘッダーを検出
-        if "枚目" in line or "CTA画像" in line:
-            # 前のセクションの内容を保存
-            if current_key:
-                metadata[current_key] = current_value.rstrip("\\n")
-            # 新しいセクションのキーとして設定
-            current_key = line.strip()
-            current_value = ""
-        else:
-            # 現在のセクションの内容に追加
-            current_value += line.replace('\n', '\\n') + "\\n"
-    
-    # 最後のセクションを辞書に追加
-    if current_key and current_value:
-        metadata[current_key] = current_value.rstrip("\\n")
-    
-    return json.dumps(metadata, ensure_ascii=False, indent=2)
+def text_to_json(input_text):
+    lines = input_text.split('\n')
+    metadata = {
+        "plot_id": lines[0].split(')')[1].strip(),
+        "1枚目-表紙 (タイトル)": lines[1].split(')')[1].strip() + " - " + lines[2].split(')')[1].strip(),
+    }
+    for i in range(2, len(lines), 2):
+        if i < len(lines) - 1:
+            heading = lines[i].split(')')[0].replace('枚目', '枚目(見出し)').strip()
+            content = lines[i].split(')')[1].strip() + "\n" + lines[i+1].strip()
+            metadata[heading] = content.replace('\n', '\\n')
 
-# Streamlitインターフェース
-st.title('テキストからメタデータへの変換ツール')
+    return metadata
 
-# ユーザー入力
-user_input = st.text_area("ここにテキストをコピペしてください", height=300)
+# Streamlit UI
+st.title('テキストをJSONに変換')
 
-if st.button('変換'):
-    # テキストをメタデータに変換
-    metadata = convert_text_to_metadata(user_input)
-    
-    # 結果を表示
-    st.text_area("変換されたメタデータ", metadata, height=300)
+with st.form("my_form"):
+    col1, col2 = st.columns(2)
+
+    with col1:
+        user_input = st.text_area("テキストを入力してください", height=300)
+
+    with col2:
+        st.write("変換結果 (JSON)")
+
+    submitted = st.form_submit_button("変換ボタン")
+
+    if submitted:
+        json_data = text_to_json(user_input)
+        with col2:
+            st.json(json_data)
