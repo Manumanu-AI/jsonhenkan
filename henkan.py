@@ -1,25 +1,24 @@
 import streamlit as st
-import json
 import re
+import json
 
-# アプリのレイアウトを定義
-st.title('テキストからJSONメタデータへの変換器')
+# Streamlitアプリのレイアウト設定
+st.title('テキストからメタデータへの変換器')
 
-# 2カラムレイアウト
+# 2カラムのレイアウトを作成
 col1, col2 = st.columns(2)
 
-# 左側のカラムでテキスト入力
+# col1にテキスト入力エリアを配置
 with col1:
-    st.header("テキスト入力")
-    input_text = st.text_area("ここにテキストを貼り付けてください", height=300)
+    st.write("以下にテキストを入力してください：")
+    input_text = st.text_area("", height=300)
 
-# 右側のカラムで結果表示
-with col2:
-    st.header("変換結果 (JSON)")
-
-# ボタンを押したときの動作
+# 変換ボタン
 if st.button('変換'):
-    # テキストを処理してメタデータ辞書を作成
+    # 改行文字を\nに置換
+    text = input_text.replace('\n', '\\n')
+
+    # メタデータ辞書の初期化
     metadata = {
         "plot_id": "",
         "1枚目-表紙 (タイトル)": "",
@@ -28,7 +27,7 @@ if st.button('変換'):
         "3枚目(見出し)": "",
         "3枚目(本文)": "",
         "4枚目(見出し)": "",
-        "4枚目(本文)": "",
+        "4枚目(本文)": "()",
         "5枚目(見出し)": "",
         "5枚目(本文)": "",
         "6枚目(見出し)": "",
@@ -40,18 +39,27 @@ if st.button('変換'):
         "9枚目(見出し)": "",
         "9枚目(本文)": "",
     }
-    
-    # テキストをセクションごとに分割し、メタデータ辞書を更新
-    sections = re.split(r'(\d+枚目[\s\S]*?)(?=\d+枚目|\Z)', input_text)
+
+    # テキストをセクションに分割
+    sections = re.split(r'(\d+枚目[\s\S]*?)(?=\d+枚目|\Z)', text)
+
+    # 各セクションを処理
     for section in sections:
         if section:
-            header, *content = section.split('\n', 1)
+            # 枚数と内容を分離
+            header, *content = section.split('\\n', 1)
             content = content[0] if content else ""
-            key = header.strip().replace(' ', '').replace('-', ' ')
+            
+            # メタデータキーを生成
+            key = header.replace(' ', '').replace('-', ' ')
+            
+            # メタデータ辞書に内容を追加
             if '見出し' in key or '表紙' in key:
                 metadata[key] = content.replace('\\n', '')
             else:
                 metadata[key] = content
-    
-    # JSON形式で結果を表示
-    st.text_area("JSON", json.dumps(metadata, ensure_ascii=False, indent=2), height=300)
+
+    # 変換されたメタデータをcol2に表示
+    with col2:
+        st.write("変換されたメタデータ：")
+        st.text_area("", value=json.dumps(metadata, ensure_ascii=False, indent=2), height=300)
